@@ -1,5 +1,5 @@
 # Meta data du workflow
-name: Hello World
+name: Exercice 1
 # Événement Déclancher
 on:
   push:
@@ -14,14 +14,17 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 24.18.0
+      # cacher le dossier ~/.npm pour éviter de réinstaller les dépendances à chaque exécution
       - uses: actions/cache@v5
         with:
           path: ~/.npm
-          key: npm-${{ hashFiles('package-lock.json') }}
-      # installer les dépendances
-      - run: npm install
+          key: npm-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      # installer les dépendances avec npm ci pour éviter de modifier le package-lock.json
+      - run: npm ci
       # lancer les tests
-      #- run: npm run test
+      #- run: npm test
+      - if: always() #renvoyer un code 1 si ça échoue pour que le job soit marqué comme failed
+        run: npm test || exit 1
       - run: |
           echo "Status ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "Ref du commit ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
