@@ -18,12 +18,6 @@ jobs:
       - run: npm ci
       # Lancer le build
       - run: npm run build
-      # Sauvegarder dist/ comme artefact
-      # ---- on sauvegarde le build dans un artefact pour le réutiliser dans d'autres jobs ou workflows
-      - uses: actions/upload-artifact@v7
-        with:
-          name: build
-          path: dist/
       # Verifier que le /dist existe
       - run: |
           if [ -d "dist" ]; then
@@ -32,6 +26,12 @@ jobs:
             echo "Le dossier dist/ n'existe pas"
             exit 1
           fi
+      # Sauvegarder dist/ comme artefact
+      # ---- on sauvegarde le build dans un artefact pour le réutiliser dans d'autres jobs ou workflows
+      - uses: actions/upload-artifact@v7
+        with:
+          name: build
+          path: dist/
       # Ecrire un résumé du build
       - run: |
           echo "- Branche : ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
