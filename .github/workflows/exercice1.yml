@@ -23,8 +23,7 @@ jobs:
       - run: npm ci
       # lancer les tests
       #- run: npm test
-      - if: always() #si ça échoue pour que le job soit marqué comme failed
-        #run: npm test || exit 1
+      #- if: always() #si ça échoue pour que le job soit marqué comme failed
       - run: |
           echo "Status ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "Ref du commit ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
