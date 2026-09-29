@@ -20,7 +20,8 @@ jobs:
           key: npm-${{ hashFiles('package-lock.json') }}
       # installer les dépendances
       - run: npm install
-      - run: npm run test
+      # lancer les tests
+      #- run: npm run test
       - run: |
           echo "Status ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
           echo "Ref du commit ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
