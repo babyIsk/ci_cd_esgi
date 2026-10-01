@@ -26,6 +26,8 @@ jobs:
             echo "Le dossier dist/ n'existe pas"
             exit 1
           fi
+      # lancer les tests
+      #- run: npm test
       # Sauvegarder dist/ comme artefact
       # ---- on sauvegarde le build dans un artefact pour le réutiliser dans d'autres jobs ou workflows
       - uses: actions/upload-artifact@v7
