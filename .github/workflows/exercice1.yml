@@ -24,7 +24,9 @@ jobs:
       # lancer les tests
       #- run: npm test
       #- if: always() #si ça échoue pour que le job soit marqué comme failed
+      # github.ref_name est le nom de la branche, alors que github.sha est l'identifiant du commit
       - run: |
           echo "Status ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "Ref du commit ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "Ref de la branche ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "Ref du commit ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
 

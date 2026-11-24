@@ -23,7 +23,7 @@ jobs:
           if [ -d "dist" ]; then
             echo "Le dossier dist/ existe"
           else
-            echo "Le dossier dist/ n'existe pas"
+            echo "::error::Le dossier dist/ n'existe pas"
             exit 1
           fi
       # lancer les tests
