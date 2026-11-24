@@ -1,0 +1,5 @@
+# Fichiers à NE PAS envoyer à Docker quand il fabrique l'image
+node_modules
+.git
+.github
+src

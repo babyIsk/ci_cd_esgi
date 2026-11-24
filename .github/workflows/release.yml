@@ -1,0 +1,104 @@
+# "Du tag à la production" : tag Git → build → tests → image Docker → registry → déploiement
+name: Release
+
+on:
+  push:
+    tags: ['v*'] # se lance UNIQUEMENT quand on pousse un tag qui commence par "v" (ex : v1.0.0)
+
+permissions:
+  contents: read # par défaut, les jobs peuvent seulement lire le dépôt
+
+jobs:
+  # ---------- 1) BUILD : on fabrique l'application une seule fois ----------
+  build:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/upload-artifact@v7
+        with:
+          name: application
+          path: dist/
+          if-no-files-found: error
+
+  # ---------- 2) TEST : on teste ce build ----------
+  test:
+    needs: build
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24.18.0
+          cache: npm
+      - run: npm ci
+      - uses: actions/download-artifact@v7
+        with:
+          name: application
+          path: dist/
+      - run: npm test
+
+  # ---------- 3) PUBLISH : on fabrique l'image Docker et on la met en rayon sur ghcr.io ----------
+  publish:
+    needs: test  # jamais de publication si les tests échouent
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+      packages: write  # SEUL ce job a le droit d'écrire dans le registry
+    steps:
+      - uses: actions/checkout@v7  # pour récupérer le Dockerfile
+      - uses: actions/download-artifact@v7
+        with:
+          name: application
+          path: dist/  # le build testé, que le Dockerfile va copier
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          push: true
+          # nom en minuscules obligatoire (mon pseudo github contient un "I" majuscule)
+          tags: |
+            ghcr.io/babyisk/ci_cd_esgi:${{ github.ref_name }}
+            ghcr.io/babyisk/ci_cd_esgi:latest
+
+      - name: Résumé
+        run: |
+          echo "## Image publiée" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Image : \`ghcr.io/babyisk/ci_cd_esgi:${{ github.ref_name }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Commit : \`${{ github.sha }}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------- 4) DEPLOY : déploiement en production (SIMULÉ) ----------
+  deploy:
+    needs: publish
+    runs-on: ubuntu-26.04
+    environment:
+      name: production  # approbation obligatoire si ça n'est pas configuré
+      url: ${{ vars.API_URL }}
+    steps:
+      - name: Simuler le déploiement
+        run: echo "Déploiement de ghcr.io/babyisk/ci_cd_esgi:${{ github.ref_name }} vers ${{ vars.API_URL }}"
+
+      # Version RÉELLE, à utiliser seulement si serveur avec Docker Swarm.
+      # Il faudrait créer le secret SSH_KEY et la variable SERVER_HOST dans l'environment "production".
+      # - name: Déployer sur le serveur via SSH
+      #   run: |
+      #     echo "${{ secrets.SSH_KEY }}" > key && chmod 600 key
+      #     ssh -i key -o StrictHostKeyChecking=accept-new deploy@${{ vars.SERVER_HOST }} \
+      #       "docker service update --image ghcr.io/babyisk/ci_cd_esgi:${{ github.ref_name }} --update-failure-action rollback monapp_web"
+
+      - name: Résumé
+        run: |
+          echo "## Déploiement" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Version : ${{ github.ref_name }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL : ${{ vars.API_URL }}" >> "$GITHUB_STEP_SUMMARY"
